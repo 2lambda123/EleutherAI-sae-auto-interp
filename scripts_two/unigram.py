@@ -11,7 +11,7 @@ from sae_auto_interp.features import (
     CombinedStat, Feature, FeatureRecord
 )
 import torch
-from sae_auto_interp.features.stats import Activation, Logits
+from sae_auto_interp.filters.stats import Activation, Logits
 from collections import defaultdict
 model = LanguageModel("openai-community/gpt2", device_map="auto", dispatch=True)
 submodule_dict = load_autoencoders(

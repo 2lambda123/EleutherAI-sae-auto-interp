@@ -1,1 +1,4 @@
-pytest
+nnsight>=0.2.11
+torch>=2.1.2
+datasets>=2.18.0
+transformer-lens>=1.2.2

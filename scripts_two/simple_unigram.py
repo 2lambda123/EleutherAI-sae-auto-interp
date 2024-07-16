@@ -10,7 +10,7 @@ from sae_auto_interp.features import (
     CombinedStat, Feature, FeatureRecord
 )
 import torch
-from sae_auto_interp.features.stats import Activation, Logits
+from sae_auto_interp.filters.stats import Activation, Logits
 from collections import defaultdict
 from tqdm   import tqdm
 
