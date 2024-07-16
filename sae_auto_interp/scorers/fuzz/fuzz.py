@@ -25,9 +25,9 @@ class FuzzingScorer(Scorer):
         echo: bool = False, 
         execute: bool = True, 
         n_few_shots: int = -1,
-        batch_size: int = 10,
-        temperature: float = 0.0,
-        max_tokens: int = 300,
+        batch_size: int = 1,
+        temperature: float = 0.5,
+        max_tokens: int = 200,
         threshold: float = 0.3
     ):
         self.client = client
@@ -168,23 +168,21 @@ class FuzzingScorer(Scorer):
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
         }
-
         schema = create_response_model(len(batch))
-        selections = await self.client.generate(
-            prompt,
-            schema=schema.model_json_schema(),
-            **generation_kwargs
-        )
+        try:
+            selections = await self.client.generate(
+                prompt,
+                schema=schema.model_json_schema(),
+                **generation_kwargs
+            )
 
-        for i, sample in enumerate(batch):
-            sample.predicted = selections[f"example_{i}"] == 1
-
-        # else:
-        #     selections = await self.client.generate(
-        #         prompt,
-        #         **generation_kwargs
-        #     )
-            
-        #     batch[0].predicted = int(selections[-1]) == 1
-
+            for i, sample in enumerate(batch):
+                sample.predicted = selections[f"example_{i}"] == 1
+        
+        except RuntimeError:
+            selections = {}
+            for i,sample in enumerate(batch):
+                sample.predicted = -1
+        
+        
         return batch

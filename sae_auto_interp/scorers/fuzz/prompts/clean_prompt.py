@@ -4,7 +4,7 @@ You will be given a certain feature of text, such as "male pronouns" or "text wi
 
 You will then be given several text examples. Your task is to determine which examples possess the feature.
 
-For each example in turn, return 1 if the sentence is correctly labeled or 0 if the tokens are mislabeled. You must return your response as a Python list of integers. For example, if you believe the first and last examples are correct, but the middle three are not, you would return [1,0,0,0,1].
+For each example in turn, return 1 if the sentence is correctly labeled or 0 if the tokens are mislabeled. You must return your response in a json format. For example, if you believe the first and last examples are correct, but the middle three are not, you would return :"{\n  \"example_0\": 1,\n  \"example_1\": 0,\n  \"example_2\": 0,\n  \"example_3\": 0,\n  \"example_4\": 1\n}.
 """
 
 # https://www.neuronpedia.org/gpt2-small/6-res-jb/6048
@@ -66,7 +66,6 @@ DSCORER_RESPONSE_THREE = """{
   "example_3": 1,
   "example_4": 1
 }"""
-
 
 GENERATION_PROMPT = """Feature explanation: {explanation}
 
