@@ -1,4 +1,3 @@
-# %%
 import os
 import asyncio
 import random
@@ -21,7 +20,6 @@ raw_features_path = "raw_features"
 explainer_out_dir = "results/explanations/simple"
 explainer_inputs=[]
 random.seed(22)
-
 
 for layer in range(0,12,2):
     module_name = f".transformer.h.{layer}"

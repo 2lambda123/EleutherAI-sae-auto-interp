@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from sae_auto_interp.clients import get_client, execute_model
 from sae_auto_interp.scorers import ScorerInput, OpenAISimulator
-from sae_auto_interp.utils import load_tokenized_data
+from sae_auto_interp.utils import load_tokenized_data, load_explanation
 from sae_auto_interp.features import FeatureRecord
 from sae_auto_interp.features.sampling import sample_top_and_quantiles
 from sae_auto_interp.logger import logger
@@ -16,14 +16,6 @@ raw_features_path = "raw_features"
 processed_features_path = "processed_features"
 explanations_dir = "results/explanations/simple"
 scorer_out_dir = "results/scores/simple"
-
-def load_explanation(feature):
-    explanations_path = f"{explanations_dir}/{feature}.txt"
-
-    with open(explanations_path, "r") as f:
-        explanation = f.read()
-
-    return explanation
 
 scorer_inputs = []
 
@@ -44,7 +36,7 @@ for layer in range(0,12,2):
     for record in tqdm(records):
 
         try:
-            explanation = load_explanation(record.feature)
+            explanation = load_explanation(record.feature, explanations_dir)
 
         except Exception as e:
             logger.error(f"Failed while sampling for {record.feature}: {e}") 
