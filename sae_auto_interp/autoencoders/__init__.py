@@ -1,1 +1,1 @@
-from .ae import load_autoencoders
+from .autoencoders import load_autoencoders

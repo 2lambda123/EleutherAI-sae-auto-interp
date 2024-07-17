@@ -4,6 +4,8 @@
 *.log
 
 .gitignore
+.vscode
+.pytest_cache
 
 keys.py
 

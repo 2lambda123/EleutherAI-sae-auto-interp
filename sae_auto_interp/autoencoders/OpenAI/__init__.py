@@ -1,5 +1,5 @@
 from .model import Autoencoder
-from ..wrapper import AutoencoderLatents
+from ..latents_wrapper import AutoencoderLatents
 from typing import List
 import torch
 from functools import partial

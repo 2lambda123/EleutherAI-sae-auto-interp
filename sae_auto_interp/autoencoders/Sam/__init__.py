@@ -1,5 +1,5 @@
 from .model import AutoEncoder
-from ..wrapper import AutoencoderLatents
+from ..latents_wrapper import AutoencoderLatents
 from functools import partial
 
 DEVICE = "cuda:0"

@@ -5,7 +5,7 @@ os.environ["CONFIG_PATH"] = "configs/caden_gpt2.yaml"
 from nnsight import LanguageModel 
 from tqdm import tqdm
 from sae_auto_interp.utils import load_tokenized_data, get_samples
-from sae_auto_interp.autoencoders.ae import load_autoencoders
+from sae_auto_interp.autoencoders.autoencoders import load_autoencoders
 from sae_auto_interp.features import (
     CombinedStat, Feature, FeatureRecord
 )

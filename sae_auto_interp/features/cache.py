@@ -87,25 +87,17 @@ class FeatureCache:
         self,
         model, 
         submodule_dict: Dict,
-        minibatch_size: int = 64,
+        minibatch_size: int = 128,
         filters: Dict[str, TensorType["indices"]] = None
     ):  
         self.model = model
         self.submodule_dict = submodule_dict
-        # Get the weidth from the first submodule
-        first_sae = list(submodule_dict.values())[0].ae
-
-        self.width = first_sae.n_features
-        print(f"Feature width: {self.width}")
         self.minibatch_size = minibatch_size
+
+        filters = self.filter_submodules(filters) \
+            if filters is not None else None
         
-        if filters is not None:
-            self.filter_submodules(filters)
-            self.buffer = Buffer(filters, minibatch_size=minibatch_size)
-
-        else:
-            self.buffer = Buffer(minibatch_size=minibatch_size)
-
+        self.buffer = Buffer(filters=filters, minibatch_size=minibatch_size)
 
     def check_memory(self, threshold=0.9):
         """
@@ -114,16 +106,14 @@ class FeatureCache:
         memory_usage = psutil.virtual_memory().percent / 100.0
         return memory_usage > threshold
 
-
-    def load_token_batches(self, tokens, minibatch_size=20):
-        
-        max_batches = self.n_tokens // self.seq_len
+    def load_token_batches(self, tokens, n_tokens):
+        max_batches = n_tokens // tokens.shape[1]
         tokens = tokens[:max_batches]
         
-        n_mini_batches = len(tokens) // minibatch_size
+        n_mini_batches = len(tokens) // self.minibatch_size
 
         token_batches = [
-            tokens[minibatch_size * i : minibatch_size * (i + 1), :] 
+            tokens[self.minibatch_size * i : self.minibatch_size * (i + 1), :] 
             for i in range(n_mini_batches)
         ]
 
@@ -136,14 +126,12 @@ class FeatureCache:
                 filtered_submodules[module_path] = self.submodule_dict[module_path]
         self.submodule_dict = filtered_submodules
 
-    def run(self, tokens, n_tokens=10_000_000):
-        self.n_tokens = n_tokens
-        self.seq_len = tokens.shape[1]
-        token_batches = self.load_token_batches(tokens,self.minibatch_size)
+    def run(self, tokens, n_tokens=15_000_000):
+        token_batches = self.load_token_batches(tokens, n_tokens)
+        total_batches = len(token_batches)
+        tokens_per_batch = token_batches[0].numel()
 
         total_tokens = 0
-        total_batches = len(token_batches)
-        tokens_per_batch = self.minibatch_size * self.seq_len
 
         with tqdm(total=total_batches, desc="Caching features") as pbar:
             
@@ -196,20 +184,19 @@ class FeatureCache:
         feature_activations = self.buffer.feature_activations[module_path]
 
         # Extract third elements
-        third_elements = feature_locations[:, 2]
+        features = feature_locations[:, 2]
 
         for split_index, split in enumerate(split_indices):
             # Create mask for this split
-            mask = torch.isin(third_elements, split)
+            mask = torch.isin(features, split)
             
-            # Mask and save feature locations
             masked_locations = feature_locations[mask]
-            location_output_file = os.path.join(save_dir, f"{module_path}_split_{split_index}_locations.pt")
-            torch.save(masked_locations, location_output_file)
-
-            # Mask and save feature activations
             masked_activations = feature_activations[mask]
+
+            location_output_file = os.path.join(save_dir, f"{module_path}_split_{split_index}_locations.pt")
             activation_output_file = os.path.join(save_dir, f"{module_path}_split_{split_index}_activations.pt")
+
+            torch.save(masked_locations, location_output_file)
             torch.save(masked_activations, activation_output_file)
 
     def save_selected_features(
@@ -218,15 +205,14 @@ class FeatureCache:
         module_path, 
         save_dir
     ):
-
         feature_locations = self.buffer.feature_locations[module_path]
         feature_activations = self.buffer.feature_activations[module_path]
 
         # Extract third elements
-        third_elements = feature_locations[:, 2]
+        features = feature_locations[:, 2]
 
         # Create mask for this split
-        mask = torch.isin(third_elements, feature_list)
+        mask = torch.isin(features, feature_list)
         
         # Mask and save feature locations
         masked_locations = feature_locations[mask]

@@ -8,16 +8,17 @@ import torch
 from typing import Dict
 import torch.nn.functional as F
 
+from ..features import FeatureRecord
+
 import umap
 import random
-
 
 class Stat:
 
     def refresh(self, **kwargs):
         pass
 
-    def compute(self, record, *args, **kwargs):
+    def compute(self, records: List[FeatureRecord], *args, **kwargs):
         pass
 
 class CombinedStat(Stat):
@@ -28,25 +29,9 @@ class CombinedStat(Stat):
         for obj in self._objs.values():
             obj.refresh(**kwargs)
 
-    def compute(self, records, save_dir=None, *args, **kwargs):
-
-        records = [
-            record 
-            for record in records 
-            if type(record) is not str
-        ]
-
+    def compute(self, records: List[FeatureRecord], *args, **kwargs):
         for obj in self._objs.values():
-            if obj.collated:
-                obj.compute(records, *args, **kwargs)
-
-        for record in records:
-            for obj in self._objs.values():
-                if not obj.collated:
-                    obj.compute(record, *args, **kwargs)
-                    
-                    if save_dir is not None:
-                        record.save(save_dir)
+            obj.compute(records, *args, **kwargs)
 
 
 class Neighbors(Stat):

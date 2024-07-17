@@ -25,3 +25,13 @@ def load_tokenized_data(
 
     return tokens
 
+def load_explanation(feature, explanations_dir):
+    explanations_path = f"{explanations_dir}/{feature}.txt"
+
+    with open(explanations_path, "r") as f:
+        explanation = f.read()
+
+    if type(explanation) == dict:
+        explanation = explanation["result"]
+
+    return explanation

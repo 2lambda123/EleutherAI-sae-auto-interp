@@ -4,7 +4,7 @@ import os
 os.environ["CONFIG_PATH"] = "configs/caden_gpt2.yaml"
 
 from sae_auto_interp.utils import load_tokenized_data
-from sae_auto_interp.autoencoders.ae import load_autoencoders
+from sae_auto_interp.autoencoders.autoencoders import load_autoencoders
 from sae_auto_interp.features import CombinedStat, FeatureRecord, Logits, Activation, QuantileSizes
 
 model = LanguageModel("openai-community/gpt2", device_map="auto", dispatch=True)

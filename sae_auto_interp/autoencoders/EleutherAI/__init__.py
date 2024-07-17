@@ -1,6 +1,6 @@
 from .model import Sae
 from typing import List
-from ..wrapper import AutoencoderLatents
+from ..latents_wrapper import AutoencoderLatents
 from functools import partial
 from ..OpenAI.model import ACTIVATIONS_CLASSES, TopK
     
