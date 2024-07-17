@@ -94,7 +94,7 @@ class FeatureCache:
         self.submodule_dict = submodule_dict
         self.minibatch_size = minibatch_size
 
-        filters = self.filter_submodules(filters) \
+        self.filter_submodules(filters) \
             if filters is not None else None
         
         self.buffer = Buffer(filters=filters, minibatch_size=minibatch_size)
@@ -151,8 +151,7 @@ class FeatureCache:
 
                     for module_path, latents in _buffer.items():
                         self.buffer.add(
-                            latents, 
-                            batch_number, module_path
+                            latents, batch_number, module_path
                         )
 
                     del _buffer

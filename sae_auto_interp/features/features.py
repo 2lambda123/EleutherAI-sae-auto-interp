@@ -44,7 +44,6 @@ class Example:
     def text(self):
         return "".join(self.str_toks)
 
-    
 class FeatureRecord:
 
     def __init__(

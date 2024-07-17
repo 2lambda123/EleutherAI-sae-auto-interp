@@ -6,7 +6,7 @@ import json
 
 model, submodule_dict = load_autoencoders(
     "openai-community/gpt2", 
-    list(range(0,12,2)),
+    list(range(0,4,2)),
     "/share/u/caden/sae-auto-interp/sae_auto_interp/autoencoders/OpenAI/gpt2_128k",
 )
 
@@ -23,5 +23,8 @@ neighbors, unique = get_neighbors(submodule_dict, feature_filter=feature_filter)
 
 # %%
 
-with open("unique.json", "w") as f:
+with open("scripts/unique.json", "w") as f:
     json.dump(unique, f, indent=4)
+
+with open("scripts/neighbors.json", "w") as f:
+    json.dump(neighbors, f, indent=4)

@@ -5,7 +5,7 @@ import torch
 from math import ceil
 
 from .clean_prompt import prompt as clean_prompt
-from .schema import create_response_model
+from ..schema import create_response_model
 from ..scorer import Scorer, ScorerInput
 from ...features import Example
 from ...clients.client import Client
@@ -63,8 +63,8 @@ class NeighborScorer(Scorer):
         tokenizer,
         echo: bool = False, 
         temperature: float = 0.0,
-        max_tokens: int = 2,
-        batch_size: int = 1,
+        max_tokens: int = 100,
+        batch_size: int = 5,
         n_test: int = 5,
     ):
         self.client = client

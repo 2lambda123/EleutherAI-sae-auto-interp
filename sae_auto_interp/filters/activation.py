@@ -7,7 +7,7 @@ def nonzero(example: Example) -> int:
     return np.count_nonzero(example.activations)
 
 def top_tok(example: Example) -> str:
-    return example.tokens[np.argmax(example.activations)]
+    return example.tokens[np.argmax(example.activations)].item()
 
 class Unigram(Stat):
     def __init__(
@@ -25,18 +25,17 @@ class Unigram(Stat):
             self._compute(record)
     
     def _compute(self, record: FeatureRecord):
-        nonzero = []
-        top_tok = []
+        avg_nonzero = []
+        top_tokens = []
 
         for example in record.examples[:self.k]:
-            nonzero.append(nonzero(example))
-            top_tok.append(top_tok(example))
+            avg_nonzero.append(nonzero(example))
+            top_tokens.append(top_tok(example))
 
-        nonzero = np.mean(nonzero)
-        top_tok = np.mean(top_tok)
-
-        record.nonzero = float(nonzero)
-        record.top_tok = float(top_tok)
+        record.n_unique = len(set(top_tokens))
+        
+        avg_nonzero = np.mean(avg_nonzero)
+        record.avg_nonzero = float(avg_nonzero)
 
 
 

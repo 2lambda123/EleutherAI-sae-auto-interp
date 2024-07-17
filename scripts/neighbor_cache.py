@@ -25,6 +25,7 @@ module_filter = {
     for name in names
 }
 
+
 cache = FeatureCache(
     model, 
     submodule_dict, 
@@ -32,6 +33,6 @@ cache = FeatureCache(
     minibatch_size=128
 )
 
-cache.run(tokens, n_tokens=10_000_000)
+cache.run(tokens, n_tokens=15_000_000)
 
 cache.save(save_dir="/share/u/caden/sae-auto-interp/raw_features")

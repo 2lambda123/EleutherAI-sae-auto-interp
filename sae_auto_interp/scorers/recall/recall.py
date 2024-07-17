@@ -1,13 +1,11 @@
-import random
 import asyncio
 from typing import List, Tuple
 import torch
-from math import ceil
+
 
 from .prompt import prompt as clean_prompt
-from .schema import create_response_model
+from ..schema import create_response_model
 from ..scorer import Scorer, ScorerInput
-from ...features import Example
 from ...clients.client import Client
 from dataclasses import dataclass
 
@@ -52,7 +50,7 @@ class Sample:
         }
 
 class RecallScorer(Scorer):
-    name = "neighbor"
+    name = "recall"
 
     def __init__(
         self, 
@@ -60,8 +58,8 @@ class RecallScorer(Scorer):
         tokenizer,
         echo: bool = False, 
         temperature: float = 0.0,
-        max_tokens: int = 2,
-        batch_size: int = 1,
+        max_tokens: int = 300,
+        batch_size: int = 10,
     ):
         self.client = client
         self.tokenizer = tokenizer
@@ -138,7 +136,8 @@ class RecallScorer(Scorer):
     def build_prompt(
         self, 
         batch: List[Sample], 
-        explanation: str
+        explanation: str,
+        batched: bool
     ) -> str:
         examples = "\n".join(
             f"Example {i}: {sample.text}" 
@@ -148,6 +147,7 @@ class RecallScorer(Scorer):
         return clean_prompt(
             explanation=explanation,
             examples=examples,
+            batched=batched
         )
 
     async def query(
@@ -164,10 +164,11 @@ class RecallScorer(Scorer):
             "temperature": self.temperature,
         }
 
+        schema = create_response_model(len(batch))
         if batched:
             selections = await self.client.generate(
                 prompt,
-                schema=create_response_model(len(batch)),
+                schema=schema.model_json_schema(),
                 **generation_kwargs
             )
 

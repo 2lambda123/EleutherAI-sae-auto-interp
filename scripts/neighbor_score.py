@@ -6,7 +6,7 @@ from nnsight import LanguageModel
 
 from sae_auto_interp.scorers import NeighborScorer, ScorerInput
 from sae_auto_interp.clients import get_client, execute_model
-from sae_auto_interp.utils import load_tokenized_data
+from sae_auto_interp.utils import load_tokenized_data, load_explanation
 from sae_auto_interp.features import FeatureRecord
 from sae_auto_interp.scorers.neighbor.utils import load_neighbors 
 
@@ -18,19 +18,9 @@ explanations_dir = "results/explanations/simple"
 scorer_out_dir = "results/scores"
 random.seed(22)
 
-with open("neighbors/unique.json", "r") as f:
+with open("scripts/unique.json", "r") as f:
     unique = json.load(f)
 
-def load_explanation(feature):
-    explanations_path = f"{explanations_dir}/{feature}.txt"
-
-    with open(explanations_path, "r") as f:
-        explanation = f.read()
-
-    if type(explanation) == dict:
-        explanation = explanation["result"]
-
-    return explanation
 
 scorer_inputs = []
 
@@ -47,14 +37,14 @@ for layer in range(0,12,2):
     )
 
     records = all_records[:10]
-    load_neighbors(records, all_records, module_name, "neighbors/neighbors.json")
+    load_neighbors(records, all_records, module_name, "scripts/neighbors.json")
 
     for record in records:
 
         try:
             examples = record.examples
             test_examples = random.sample(examples[100:200], 20)
-            explanation = load_explanation(record.feature)
+            explanation = load_explanation(record.feature, explanations_dir)
             scorer_inputs.append(
                 ScorerInput(
                     explanation=explanation,
@@ -68,7 +58,7 @@ for layer in range(0,12,2):
 
     break
 
-client = get_client("local", "astronomer/Llama-3-8B-Instruct-GPTQ-8-Bit")
+client = get_client("outlines", "astronomer/Llama-3-8B-Instruct-GPTQ-8-Bit")
 
 scorer = NeighborScorer(
     client,

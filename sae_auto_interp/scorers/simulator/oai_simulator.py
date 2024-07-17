@@ -9,12 +9,14 @@ class OpenAISimulator(Scorer):
     """
     Simple wrapper for the LogProbFreeExplanationTokenSimulator.
     """
+
+    name = "simulator"
+    
     def __init__(
         self,
         client,
     ):
         self.client = client
-        self.name = "simulator"
 
     async def __call__(
         self,
