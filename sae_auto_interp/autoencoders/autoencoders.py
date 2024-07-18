@@ -16,13 +16,10 @@ def load_autoencoders(model_name, ae_layers, weight_dir, **kwargs):
 
     model = load_model(model_name, **kwargs)
 
-    if "gpt2_128k" in weight_dir:
+    if "gpt2_128k" in weight_dir or "gpt2_32k" in weight_dir:
         submodules = load_oai_autoencoders(model, ae_layers, weight_dir)
        
-    if "llama" in weight_dir:
-        submodules = load_eai_autoencoders(model, ae_layers, weight_dir)
-
-    if "nora" in weight_dir:
+    if "llama" in weight_dir or "nora" in weight_dir:
         submodules = load_eai_autoencoders(model, ae_layers, weight_dir)
 
     if "pythia" in weight_dir:
