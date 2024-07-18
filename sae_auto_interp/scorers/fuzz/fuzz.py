@@ -177,7 +177,10 @@ class FuzzingScorer(Scorer):
             )
 
             for i, sample in enumerate(batch):
-                sample.predicted = selections[f"example_{i}"] == 1
+                if f"example_{i}" not in selections:
+                    sample.predicted = -1
+                else:
+                    sample.predicted = selections[f"example_{i}"] == 1
         
         except RuntimeError:
             selections = {}

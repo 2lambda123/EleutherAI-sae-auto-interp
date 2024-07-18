@@ -4,7 +4,7 @@ from asyncio import sleep
 import json
 
 from openai import AsyncOpenAI
-
+import re
 class Local(Client):
     provider = "vllm"
 
@@ -49,8 +49,15 @@ class Local(Client):
                 processed_response = self.postprocess(response)
                 
                 if schema is not None:
-                    processed_response = json.loads(processed_response)
-
+                    match = re.search(
+                        r'\{[^{}]*\}', 
+                        processed_response, re.DOTALL
+                    )
+                    if match is not None:
+                        processed_response = json.loads(match.group())
+                    else:
+                        raise RuntimeError("Failed to extract JSON response.")
+                    
                 return processed_response
             
             except json.JSONDecodeError:

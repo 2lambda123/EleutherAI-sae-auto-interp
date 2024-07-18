@@ -35,13 +35,11 @@ async def execute_model(
     os.makedirs(output_dir, exist_ok=True)
 
     async def process_and_save(query):
-        module_name = query.record.feature.module_name
-        feature_index = query.record.feature.feature_index
-        logger.info(f"Executing {model.name} on feature {module_name}, feature {feature_index}")
+        logger.info(f"Executing {model.name} on {query.record.feature}")
         start_time = time.time()
         result = await model(query)
         end_time = time.time()
-        filename = f"{module_name}_feature{feature_index}.txt"
+        filename = f"layer{query.record.feature}.txt"
         filepath = os.path.join(output_dir, filename)
         if record_time:
             result = {
