@@ -21,7 +21,6 @@ feature_filter = {
 
 neighbors, unique = get_neighbors(submodule_dict, feature_filter=feature_filter)
 
-# %%
 
 with open("scripts/unique.json", "w") as f:
     json.dump(unique, f, indent=4)

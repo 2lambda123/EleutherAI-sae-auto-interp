@@ -182,7 +182,6 @@ class FeatureCache:
         feature_locations = self.buffer.feature_locations[module_path]
         feature_activations = self.buffer.feature_activations[module_path]
 
-        # Extract third elements
         features = feature_locations[:, 2]
 
         for split_index, split in enumerate(split_indices):
@@ -207,7 +206,6 @@ class FeatureCache:
         feature_locations = self.buffer.feature_locations[module_path]
         feature_activations = self.buffer.feature_activations[module_path]
 
-        # Extract third elements
         features = feature_locations[:, 2]
 
         # Create mask for this split

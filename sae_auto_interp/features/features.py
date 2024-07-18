@@ -1,199 +1,185 @@
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Tuple, Callable, Optional
 import torch
 from tqdm import tqdm
 import orjson
 import blobfile as bf
-from collections import defaultdict
-from typing import List, Callable
-from ..logger import logger
-from torch import Tensor
-from .sampling import default_sampler
+from dataclasses import asdict
 
-from .utils import display
-from .activations import pool_max_activation_slices, get_non_activating_tokens
+from torch import Tensor
+from torchtyping import TensorType
+
+from ..logger import logger
+from .sampling import default_sampler
+from .example import load_examples
+from .activations import pool_max_activation_slices, get_random_tokens
+
+from .config import FeatureConfig
 
 @dataclass
-class Feature:
+class FeatureID:
     module_name: int
     feature_index: int
     
     def __repr__(self) -> str:
         return f"{self.module_name}_feature{self.feature_index}"
     
-@dataclass
-class Example:
-    tokens: List[int]
-    activations: List[float]
+    @staticmethod
+    def from_path(path: str) -> 'FeatureID':
+        path = path.replace(".txt", "").replace("feature", "") 
+        module_name, feature_index = path.split("_")
+        return FeatureID(module_name, int(feature_index))
     
-    def __hash__(self) -> int:
-        return hash(tuple(self.tokens))
-
-    def __eq__(self, other) -> bool:
-        return self.tokens == other.tokens
-    
-    def decode(self, tokenizer):
-        self.str_toks = tokenizer.batch_decode(self.tokens)
-        return self.str_toks
-
-    @property
-    def max_activation(self):
-        return max(self.activations)
-    
-    @property
-    def text(self):
-        return "".join(self.str_toks)
 
 class FeatureRecord:
-
-    def __init__(
-        self,
-        feature: Feature,
-    ):
+    def __init__(self, feature: FeatureID):
         self.feature = feature
 
+        self.examples = []
+        self.train = []
+        self.test = []
+        self.random_examples = []
+
     @property
-    def max_activation(self):
-        return self.examples[0].max_activation
+    def max_activation(self) -> float:
+        return self.examples[0].max_activation if self.examples else 0.0
     
-    def prepare_examples(self, tokens, activations):
-        return [
-            Example(
-                tokens=toks,
-                activations=acts,
-            )
-            for toks, acts in zip(
-                tokens, 
-                activations
-            )
-        ]
-
     @classmethod
-    def from_tensor(
-        cls,
-        tokens: Tensor, 
-        module_name: str,
-        raw_dir: str,
-        selected_features: List[int] = None,
-        **kwargs
-    ) -> List["FeatureRecord"]:
-        """
-        Loads a list of records from a tensor of locations and activations. Pass
-        in a proccessed_dir to load a feature's processed data.
-        """
-        
-        # Build location paths
-        locations_path = f"{raw_dir}/{module_name}_locations.pt"
-        activations_path = f"{raw_dir}/{module_name}_activations.pt"
-        
-        # Load tensor
-        locations = torch.load(locations_path)
-        activations = torch.load(activations_path)
-
-        # Get unique features to load into records
-        features = torch.unique(locations[:, 2])
-
-        # Filter selected features
-        if selected_features is not None:
-            selected_features_tensor = torch.tensor(selected_features)
-            features = features[torch.isin(features, selected_features_tensor)]
-        
-        records = []
-
-        for feature_index in tqdm(features, desc=f"Loading features from tensor for layer {module_name}"):
-            
-            record = cls(
-                Feature(
-                    module_name=module_name, 
-                    feature_index=feature_index.item()
-                )
-            )
-            
-            mask = locations[:, 2] == feature_index
-            # Discard the feature dim
-            feature_locations = locations[mask][:,:2]
-            feature_activations = activations[mask]
-        
-            try:
-                record.from_locations(
-                    tokens,
-                    feature_locations,
-                    feature_activations,
-                    **kwargs
-                )
-            except ValueError as e:
-                logger.error(f"Error loading feature {record.feature}: {e}")
-                continue
-
-            records.append(record)
-
-        return records
-    
-    
-    def from_locations(
+    def load(
         self,
-        tokens: Tensor, 
-        feature_locations: Tensor,
-        feature_activations: Tensor,
-        min_examples: int = 200,
-        max_examples: int = 2_000,
-        sampler: Callable = default_sampler,
-        processed_dir: str = None, 
-        n_random: int = 0,
-    ):
-        """
-        Loads a single record from a tensor of locations and activations.
-        """
-        
+        feature: FeatureID,
+        cfg: FeatureConfig,
+        tokens: TensorType["batch", "seq"],
+        feature_locations: TensorType["n_locations", 2],
+        feature_activations: TensorType["n_locations"],
+        sampler: Callable,
+        processed_dir: Optional[str],
+        n_random_examples: int,
+    ) -> None:
+        record = FeatureRecord(feature)
+
         processed_tokens, processed_activations = pool_max_activation_slices(
-            feature_locations, feature_activations, tokens, ctx_len=20, k=max_examples
+            feature_locations, 
+            feature_activations, 
+            tokens, 
+            ctx_len=20, 
+            k=cfg.max_examples
         )
 
-        if len(processed_tokens) < min_examples:
-            logger.error(f"Feature {self.feature} has fewer than {min_examples} examples.")
-            raise ValueError(f"Feature {self.feature} has fewer than {min_examples} examples.")
+        if len(processed_tokens) < cfg.min_examples:
+            logger.error(f"Not enough examples: {feature}.")
+            raise ValueError(f"Not enough examples: {feature}.")
 
-        self.examples = self.prepare_examples(processed_tokens, processed_activations)
-        
-        sampler(self)
+        record.examples = load_examples(processed_tokens, processed_activations)
 
-        # POSTPROCESSING
+        if cfg.sample:
+            sampler(record, **asdict(cfg))
 
-        if n_random > 0:
-            random_tokens = get_non_activating_tokens(
-                feature_locations, tokens, n_random
-            )
-
-            self.random_examples = self.prepare_examples(
-                random_tokens, torch.zeros_like(random_tokens),
-            )
-
-        # Load processed data if a directory is provided
         if processed_dir:
-            self.load_processed(processed_dir)
+            record._load_processed(processed_dir)
+        
+        if n_random_examples > 0:
+            record._load_random_examples(
+                n_random_examples, tokens, feature_locations
+            )
 
-    def display(self, tokenizer, n=10):
-        for example in self.examples[:n]:
-            example.decode(tokenizer)
-        display(self.examples[:n])
+        return record
 
-    def load_processed(self, directory: str):
-        path = f"{directory}/{self.feature}.json"
+    def _load_random_examples(
+        self, 
+        n_random_examples: int,
+        tokens: TensorType["batch", "seq"],
+        feature_locations: TensorType["batch", 2],
+    ) -> None:
+        random_tokens = get_random_tokens(
+            feature_locations, tokens, n_random_examples
+        )
 
+        self.random_examples = load_examples(
+            random_tokens, torch.zeros_like(random_tokens)
+        )
+
+    def _load_processed(self, processed_dir: str) -> None:
+        path = f"{processed_dir}/{self.feature}.json"
         with bf.BlobFile(path, "rb") as f:
             processed_data = orjson.loads(f.read())
             self.__dict__.update(processed_data)
     
-    def save(self, directory: str, save_examples=False):
+    def save(self, directory: str, save_examples: bool = False) -> None:
         path = f"{directory}/{self.feature}.json"
-        serializable = self.__dict__
+        serializable = self.__dict__.copy()
 
         if not save_examples:
-            serializable.pop("examples")
-            serializable.pop("train")
-            serializable.pop("test")
+            serializable.pop("examples", None)
+            serializable.pop("train", None)
+            serializable.pop("test", None)
 
-        serializable.pop("feature")
+        serializable.pop("feature", None)
         with bf.BlobFile(path, "wb") as f:
             f.write(orjson.dumps(serializable))
 
+
+def _from_tensor(
+    raw_dir: str,
+    module_name: str,
+    selected_features: Optional[List[int]] = None,
+) -> Tuple[Tensor, Tensor, Tensor]:
+    locations_path = f"{raw_dir}/{module_name}_locations.pt"
+    activations_path = f"{raw_dir}/{module_name}_activations.pt"
+    
+    locations = torch.load(locations_path)
+    activations = torch.load(activations_path)
+
+    features = torch.unique(locations[:, 2])
+
+    if selected_features is not None:
+        selected_features_tensor = torch.tensor(selected_features)
+        features = features[torch.isin(features, selected_features_tensor)]
+
+    return locations, activations, features
+
+
+def load_feature_batch(
+    cfg: FeatureConfig,
+    tokens: TensorType["batch", "seq"],
+    module_name: str,
+    raw_dir: str,
+    processed_dir: Optional[str] = None,
+    n_random_examples: int = 10,
+    selected_features: Optional[List[int]] = None,
+    sampler: Callable = default_sampler,
+) -> List[FeatureRecord]:
+    
+    locations, activations, features = \
+        _from_tensor(
+            raw_dir, module_name, selected_features
+        )
+    
+    records = []
+
+    for feature_index in tqdm(features, desc=f"Loading {module_name}"):
+        mask = locations[:, 2] == feature_index
+        feature_locations = locations[mask][:,:2]
+        feature_activations = activations[mask]
+    
+        feature = FeatureID(module_name, feature_index.item())
+
+        try:
+            record = FeatureRecord.load(
+                feature,
+                tokens=tokens,
+                cfg=cfg,
+                feature_locations=feature_locations,
+                feature_activations=feature_activations,
+                processed_dir=processed_dir,
+                n_random_examples=n_random_examples,
+                sampler=sampler,
+            )
+
+            records.append(record)
+
+        except ValueError as e:
+            logger.error(f"Error loading feature {feature}: {e}")
+            continue
+
+    return records

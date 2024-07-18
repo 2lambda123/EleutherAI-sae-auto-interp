@@ -33,7 +33,7 @@ def pool_max_activation_slices(
     return token_windows, activation_windows
 
 
-def get_non_activating_tokens(
+def get_random_tokens(
     locations, tokens, n_to_find, ctx_len=20
 ):
     unique_batch_pos = torch.unique(locations[:,0])

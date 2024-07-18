@@ -5,7 +5,8 @@ from nnsight import LanguageModel
 from sae_auto_interp.explainers import SimpleExplainer, ExplainerInput
 from sae_auto_interp.clients import get_client, execute_model
 from sae_auto_interp.utils import load_tokenized_data
-from sae_auto_interp.features import FeatureRecord
+from sae_auto_interp.features.features import FeatureRecord, load_feature_batch
+from sae_auto_interp.features.utils import vis
 
 model = LanguageModel("openai-community/gpt2", device_map="auto", dispatch=True)
 tokens = load_tokenized_data(model.tokenizer)
@@ -19,7 +20,7 @@ random.seed(22)
 for layer in range(0,12,2):
     module_name = f".transformer.h.{layer}"
 
-    records = FeatureRecord.from_tensor(
+    records = load_feature_batch(
         tokens,
         module_name,
         selected_features=list(range(20)),

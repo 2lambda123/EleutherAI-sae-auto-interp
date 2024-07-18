@@ -2,11 +2,14 @@ import os
 import json
 from tqdm import tqdm
 import torch
-from collections import defaultdict
-from dataclasses import dataclass
 
 def get_dims(model, examples):
-    return model.tokenizer(examples, return_tensors='pt',padding=True, truncation=True).input_ids.shape
+    return model.tokenizer(
+        examples, 
+        return_tensors='pt',
+        padding=True, 
+        truncation=True
+    ).input_ids.shape
 
 def _score(model, submodule, examples, features):
     batch_size, seq_len = get_dims(model, examples)

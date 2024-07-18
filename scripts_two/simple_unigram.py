@@ -7,7 +7,7 @@ from tqdm import tqdm
 from sae_auto_interp.utils import load_tokenized_data, get_samples
 from sae_auto_interp.autoencoders.autoencoders import load_autoencoders
 from sae_auto_interp.features import (
-    CombinedStat, Feature, FeatureRecord
+    CombinedStat, FeatureID, FeatureRecord
 )
 import torch
 from sae_auto_interp.filters.stats import Activation, Logits

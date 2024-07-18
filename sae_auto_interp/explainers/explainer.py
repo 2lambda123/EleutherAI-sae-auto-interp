@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
-from ..features.features import Example, FeatureRecord
+from ..features import FeatureRecord, Example
 
 
 @dataclass

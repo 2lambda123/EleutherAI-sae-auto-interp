@@ -5,7 +5,7 @@ import os
 from sae_auto_interp.scorers import GenerationScorer, ScorerInput
 from sae_auto_interp.clients import get_client, execute_model
 from sae_auto_interp.utils import load_tokenized_data, load_explanation
-from sae_auto_interp.features import FeatureRecord, Feature
+from sae_auto_interp.features import FeatureRecord, FeatureID
 from sae_auto_interp.features.sampling import sample_top_and_quantiles
 
 model = LanguageModel("openai-community/gpt2", device_map="auto", dispatch=True)
@@ -25,7 +25,7 @@ def to_feature(string):
 for file in os.listdir(explanations_dir):
     module, feature = to_feature(file)
 
-    feature = Feature(module, feature)
+    feature = FeatureID(module, feature)
 
     explanation = load_explanation(
         feature,
