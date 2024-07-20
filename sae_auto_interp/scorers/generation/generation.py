@@ -1,7 +1,14 @@
 from .prompts import get_gen_scorer_template
 from ..scorer import Scorer, ScorerInput
 from ...clients import get_client
-from ..schema import create_str_response_model
+from pydantic import create_model
+
+def create_str_response_model(n: int):
+    fields = {f'example_{i}': (str, ...) for i in range(n)}
+    
+    ResponseModel = create_model('ResponseModel', **fields)
+    
+    return ResponseModel
 
 class GenerationScorer(Scorer):
     name = "generation"
