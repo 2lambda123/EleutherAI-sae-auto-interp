@@ -14,6 +14,7 @@ def load_eai_autoencoders(
     submodules = {}
 
     for layer in ae_layers:
+        path = f"{weight_dir}/layers.{layer}"
         if "llama" in weight_dir:
             model_type = "llama"
             path = f"{weight_dir}/layers.{layer}"
@@ -39,6 +40,9 @@ def load_eai_autoencoders(
             num_latents = sae.d_in * sae.cfg.expansion_factor
         submodule.ae = AutoencoderLatents(sae,partial(_forward, sae),num_latents)
 
+        submodule = model.model.layers[layer]
+        submodule.ae = AutoencoderLatents(sae,partial(_forward, sae),sae.d_in * sae.cfg.expansion_factor)
+
         submodules[submodule._module_path] = submodule
     
     with model.edit(" "):
@@ -46,4 +50,4 @@ def load_eai_autoencoders(
             acts = submodule.output[0]
             submodule.ae(acts, hook=True)
 
-    return submodules	
+    return submodules ,model	
