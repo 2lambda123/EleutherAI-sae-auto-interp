@@ -11,6 +11,7 @@ from sae_auto_interp.features import top_and_quantiles, FeatureLoader, FeatureDa
 from sae_auto_interp.pipeline import Pipe, Pipeline, Actor
 from functools import partial
 from sae_auto_interp.config import FeatureConfig
+import time
 
 ### Set directories ###
 
@@ -23,21 +24,22 @@ SCORER_OUT_DIR = "results/simulation"
 tokenizer = load_tokenizer('gpt2')
 tokens = load_tokenized_data(tokenizer)
 
-modules = [".transformer.h.0", ".transformer.h.2"]
-# features = {
-#     m : torch.arange(10) for m in modules
-# }
+modules = [f".transformer.h.{i}" for i in range(0,12,2)]
+features = {
+    m : torch.arange(20) for m in modules
+}
 
 dataset = FeatureDataset(
     raw_dir=RAW_FEATURES_PATH,
     modules = modules,
     cfg=FeatureConfig(),
-    # features=features,
+    features=features,
 )
 
 loader = FeatureLoader(
     tokens=tokens,
     dataset=dataset,
+    cfg=FeatureConfig(),
     constructor=default_constructor,
     sampler=top_and_quantiles
 )
@@ -60,12 +62,21 @@ def scorer_preprocess(result):
     record = result.record
     record.explanation = result.explanation
     record.test = record.test[0][:5]
+
+
+    record.time = time.time()
     return record
 
 def scorer_postprocess(result):
     result = result.result()
+
+    data = {
+        "time" : time.time() - result.record.time,
+        "score": result.score
+    }
+
     with open(f"{SCORER_OUT_DIR}/{result.record.feature}.txt", "wb") as f:
-        f.write(orjson.dumps(result.score))
+        f.write(orjson.dumps(data))
 
 scorer_pipe = Pipe(
     Actor(

@@ -1,25 +1,30 @@
 import asyncio
 import orjson
+import os
 
 import argparse
 
 import torch
 import time
-from sae_auto_interp.explainers import SimpleExplainer
+from sae_auto_interp.explainers import explanation_loader
 from sae_auto_interp.scorers import RecallScorer
 from sae_auto_interp.clients import Local
 from sae_auto_interp.utils import load_tokenized_data, load_tokenizer, default_constructor
 from sae_auto_interp.features import top_and_quantiles, FeatureLoader, FeatureDataset
 from sae_auto_interp.pipeline import Pipe, Pipeline, Actor
 from sae_auto_interp.config import FeatureConfig
+from functools import partial
 
 ### Set directories ###
 
 RAW_FEATURES_PATH = "raw_features/gpt2"
 EXPLAINER_OUT_DIR = "results/explanations"
-SCORER_OUT_DIR = "results/scores"
 
 def main(batch_size: int):
+
+    SCORER_OUT_DIR = f"results/scores/recall_{batch_size}"
+
+    os.makedirs(SCORER_OUT_DIR, exist_ok=True)
 
     ### Load dataset ###
 
@@ -52,29 +57,10 @@ def main(batch_size: int):
 
     ### Build Explainer pipe ###
 
-    def explainer_preprocess(record):
-        record.time = time.time()
-
-        return record
-
-    def explainer_postprocess(result):
-        result = result.result()
-
-        data= {
-            "time" : time.time() - result.record.time,
-            "explanation": result.explanation
-        }
-
-        with open(f"{EXPLAINER_OUT_DIR}/{result.record.feature}.txt", "wb") as f:
-            f.write(orjson.dumps(data))
-
     explainer_pipe = Pipe(
         Actor(
-            SimpleExplainer(client, tokenizer=tokenizer, cot=False),
-            preprocess=explainer_preprocess,
-            postprocess=explainer_postprocess
-        ),
-        name="explainer"
+            partial(explanation_loader, explanation_dir=EXPLAINER_OUT_DIR)
+        )
     )
 
     ### Build Scorer pipe ###
@@ -112,7 +98,7 @@ def main(batch_size: int):
     pipeline = Pipeline(
         loader.load,
         explainer_pipe,
-        # scorer_pipe,
+        scorer_pipe,
     )
 
     asyncio.run(
@@ -128,3 +114,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.batch_size)
+
+    os.rename("token_stats/vllm.log", f"token_stats/vllm_{args.batch_size}.log")

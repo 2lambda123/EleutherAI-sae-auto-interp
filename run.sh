@@ -1,1 +1,1 @@
-python scripts/recall.py
+python scripts/simulate.py
