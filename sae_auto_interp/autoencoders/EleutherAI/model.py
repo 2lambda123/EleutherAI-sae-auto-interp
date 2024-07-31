@@ -18,6 +18,7 @@ def eager_decode(top_indices: Tensor, top_acts: Tensor, W_dec: Tensor):
     acts = buf.scatter_(dim=-1, index=top_indices, src=top_acts)
     return acts @ W_dec.mT
 
+<<<<<<< HEAD
 
 # Triton implementation of SAE decoder
 def triton_decode(top_indices: Tensor, top_acts: Tensor, W_dec: Tensor):
@@ -43,6 +44,13 @@ class EncoderOutput(NamedTuple):
 
     top_indices: Tensor
     """Indices of the top-k features."""
+
+=======
+"""
+This code is originally from the EleutherAI repository:
+https://github.com/EleutherAI/sae
+"""
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
 
 
 class ForwardOutput(NamedTuple):
@@ -78,6 +86,10 @@ class Sae(nn.Module):
 
         self.encoder = nn.Linear(d_in, self.num_latents, device=device, dtype=dtype)
         self.encoder.bias.data.zero_()
+<<<<<<< HEAD
+=======
+        self.encoder.weight.data *= 0.1  # Small init means FVU starts below 1.0
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
 
         self.W_dec = nn.Parameter(self.encoder.weight.data.clone()) if decoder else None
         if decoder and self.cfg.normalize_decoder:
@@ -167,6 +179,10 @@ class Sae(nn.Module):
                     "d_in": self.d_in,
                 },
                 f,
+<<<<<<< HEAD
+=======
+                indent=4,
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
             )
 
     @property

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import List, Tuple, Callable, Optional
 import torch
 from tqdm import tqdm
@@ -15,14 +16,48 @@ from .example import load_examples
 from .activations import pool_max_activation_slices, get_random_tokens
 
 from .config import FeatureConfig
+=======
+
+import blobfile as bf
+import orjson
+from torchtyping import TensorType
+
+
+@dataclass
+class Example:
+    tokens: TensorType["seq"]
+    activations: TensorType["seq"]
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.tokens.tolist()))
+
+    def __eq__(self, other: "Example") -> bool:
+        return self.tokens.tolist() == other.tokens.tolist()
+
+    @property
+    def max_activation(self):
+        return max(self.activations)
+
+    @staticmethod
+    def prepare_examples(tokens, activations):
+        return [
+            Example(
+                tokens=toks,
+                activations=acts,
+            )
+            for toks, acts in zip(tokens, activations)
+        ]
+
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
 
 @dataclass
 class FeatureID:
     module_name: int
     feature_index: int
-    
+
     def __repr__(self) -> str:
         return f"{self.module_name}_feature{self.feature_index}"
+<<<<<<< HEAD
     
     @staticmethod
     def from_path(path: str) -> 'FeatureID':
@@ -33,6 +68,15 @@ class FeatureID:
 
 class FeatureRecord:
     def __init__(self, feature: FeatureID):
+=======
+
+
+class FeatureRecord:
+    def __init__(
+        self,
+        feature: Feature,
+    ):
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
         self.feature = feature
 
         self.examples = []
@@ -41,6 +85,7 @@ class FeatureRecord:
         self.random_examples = []
 
     @property
+<<<<<<< HEAD
     def max_activation(self) -> float:
         return self.examples[0].max_activation if self.examples else 0.0
     
@@ -84,6 +129,10 @@ class FeatureRecord:
             )
 
         return record
+=======
+    def max_activation(self):
+        return self.examples[0].max_activation
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
 
     def _load_random_examples(
         self, 
@@ -104,8 +153,13 @@ class FeatureRecord:
         with bf.BlobFile(path, "rb") as f:
             processed_data = orjson.loads(f.read())
             self.__dict__.update(processed_data)
+<<<<<<< HEAD
     
     def save(self, directory: str, save_examples: bool = False) -> None:
+=======
+
+    def save(self, directory: str, save_examples=False):
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
         path = f"{directory}/{self.feature}.json"
         serializable = self.__dict__.copy()
 
@@ -117,6 +171,7 @@ class FeatureRecord:
         serializable.pop("feature", None)
         with bf.BlobFile(path, "wb") as f:
             f.write(orjson.dumps(serializable))
+<<<<<<< HEAD
 
 
 def _from_tensor(
@@ -183,3 +238,5 @@ def load_feature_batch(
             continue
 
     return records
+=======
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13

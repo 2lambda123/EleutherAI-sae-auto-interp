@@ -1,17 +1,22 @@
+<<<<<<< HEAD
 from .model import Autoencoder
 from ..latents_wrapper import AutoencoderLatents
 from typing import List
 import torch
+=======
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13
 from functools import partial
+from typing import List
+
+import torch
+
+from ..wrapper import AutoencoderLatents
+from .model import Autoencoder
 
 DEVICE = "cuda:0"
 
-def load_oai_autoencoders(
-    model, 
-    ae_layers: List[int], 
-    weight_dir: str
-):
 
+def load_oai_autoencoders(model, ae_layers: List[int], weight_dir: str):
     submodules = {}
 
     for layer in ae_layers:
@@ -25,7 +30,8 @@ def load_oai_autoencoders(
             return latents
 
         submodule = model.transformer.h[layer]
-        submodule.ae = AutoencoderLatents(ae,partial(_forward, ae),n_features=131072)
+
+        submodule.ae = AutoencoderLatents(ae, partial(_forward, ae), width=131_072)
 
         submodules[submodule._module_path] = submodule
 

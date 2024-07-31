@@ -1,5 +1,7 @@
-import torch
 from typing import Callable
+
+import torch
+
 
 class AutoencoderLatents(torch.nn.Module):
     """
@@ -8,13 +10,14 @@ class AutoencoderLatents(torch.nn.Module):
 
     def __init__(
         self,
-        autoencoder, 
+        ae: torch.nn.Module,
         _forward: Callable,
-        n_features: int = 32768,
+        width: int = 32768,
     ) -> None:
         super().__init__()
         self._forward = _forward
-        self.n_features = n_features
-        self.autoencoder = autoencoder
+        self.width = width
+        self.ae = ae
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._forward(x)

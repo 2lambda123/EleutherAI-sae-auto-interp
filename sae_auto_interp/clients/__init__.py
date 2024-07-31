@@ -1,14 +1,9 @@
+from .client import Client, create_response_model
 from .local import Local
 from .openrouter import OpenRouter
 from .outlines import Outlines
-from ..logger import logger
-import os
-import orjson 
-import asyncio
-import aiofiles
-import time
-# import random
 
+<<<<<<< HEAD
 
 def get_client(provider: str, model: str, **kwargs):
     if provider == "local":
@@ -61,3 +56,6 @@ async def execute_model(
         await process_batch(batch)
         logger.info(f"Completed batch {i//batch_size + 1} of {(len(queries)-1)//batch_size + 1}")
         
+=======
+__all__ = ["Client", "create_response_model", "Local", "OpenRouter", "Outlines"]
+>>>>>>> d3b81f50d676295bd88d0e499194b44c40c02b13

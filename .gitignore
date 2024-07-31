@@ -1,6 +1,7 @@
 *.egg-info
 *__pycache__
 *.pt
+*.safetensors
 *.log
 
 .gitignore
@@ -10,12 +11,20 @@
 keys.py
 
 results/*
-!results/graphs
-
-saved_*
-processed*
+!results/gpt2_explanations
+!results/gpt2_recall
+!results/gpt2_fuzz
 raw*
+saved*
+scores*
+processed*
 extras*
 scores*
 caching_neurons
 redoing_experiments
+weights*
+.nfs*
+
+processed_features/
+
+output_html/
