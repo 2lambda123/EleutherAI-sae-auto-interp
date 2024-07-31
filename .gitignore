@@ -17,3 +17,5 @@ processed*
 raw*
 extras*
 scores*
+caching_neurons
+redoing_experiments
