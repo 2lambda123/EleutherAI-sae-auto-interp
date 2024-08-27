@@ -65,8 +65,10 @@ class SimpleExplainer(Explainer):
         try:
             match = re.search(r"\[EXPLANATION\]:\s*(.*)", text, re.DOTALL)
 
-            return match.group(1).strip() if match else "Explanation could not be parsed."
-        except Exception as e:
+            return (
+                match.group(1).strip() if match else "Explanation could not be parsed."
+            )
+        except Exception:
             return "Explanation could not be parsed."
 
     def _highlight(self, index, example):

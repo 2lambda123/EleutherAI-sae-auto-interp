@@ -96,12 +96,12 @@ class Classifier(Scorer):
             else:
                 array = self._parse(selections)
 
-        
+
         results = []
 
         for i, sample in enumerate(batch):
             result = sample.data
-            prediction = array[i] 
+            prediction = array[i]
             result.prediction = prediction
             result.correct = prediction == result.ground_truth
             if self.log_prob:
@@ -133,9 +133,9 @@ class Classifier(Scorer):
     def _parse_logprobs(self, logprobs):
         #Logprobs will be a list of 5 probabilites for each token in the response
         # The response will be in the form of [x, x, x, ...] for each position we
-        # need to get the probability of 1 or 0 
+        # need to get the probability of 1 or 0
         probabilities = []
-        
+
         for i in range(len(logprobs)):
             if "1" in logprobs[i].token or "0" in logprobs[i].token:
                 top_logprobs = logprobs[i].top_logprobs

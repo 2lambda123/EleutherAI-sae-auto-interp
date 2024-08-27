@@ -34,7 +34,7 @@ from .prompt_builder import (
 
 logger = logging.getLogger(__name__)
 
-# Our prompts use normalized activation values, which map any range of positive 
+# Our prompts use normalized activation values, which map any range of positive
 # activations to the integers from 0 to 10.
 MAX_NORMALIZED_ACTIVATION = 10
 VALID_ACTIVATION_TOKENS_ORDERED = list(
@@ -42,20 +42,23 @@ VALID_ACTIVATION_TOKENS_ORDERED = list(
 )
 VALID_ACTIVATION_TOKENS = set(VALID_ACTIVATION_TOKENS_ORDERED)
 
-# Edge Case #3: The chat-based simulator is confused by end token. Replace it with 
+# Edge Case #3: The chat-based simulator is confused by end token. Replace it with
 # a "not end token"
 END_OF_TEXT_TOKEN = "<|endoftext|>"
 END_OF_TEXT_TOKEN_REPLACEMENT = "<|not_endoftext|>"
 EXPLANATION_PREFIX = "the main thing this neuron does is find"
 
+
 class Activation(BaseModel):
     token: str
     activation: float
+
 
 class ResponseModel(BaseModel):
     to_find: str
     document: str
     activations: List[Activation]
+
 
 class SimulationType(str, Enum):
     """How to simulate neuron activations.
@@ -64,14 +67,14 @@ class SimulationType(str, Enum):
     ALL_AT_ONCE = "all_at_once"
     """
     Use a single prompt with <unknown> tokens; calculate EVs using logprobs.
-    
+
     Implemented by ExplanationNeuronSimulator.
     """
 
     ONE_AT_A_TIME = "one_at_a_time"
     """
     Use a separate prompt for each token being simulated; calculate EVs using logprobs.
-    
+
     Implemented by ExplanationTokenByTokenSimulator.
     """
 
@@ -98,8 +101,8 @@ def compute_expected_value(
 
 def parse_top_logprobs(top_logprobs: dict[str, float]) -> OrderedDict[int, float]:
     """
-    Given a map from tokens to logprobs, return a map from distribution values 
-    (integers on the range [0, 10]) to unnormalized probabilities 
+    Given a map from tokens to logprobs, return a map from distribution values
+    (integers on the range [0, 10]) to unnormalized probabilities
     (in the sense that they may not sum to 1).
     """
     probabilities_by_distribution_value = OrderedDict()
@@ -139,7 +142,7 @@ def parse_simulation_response(
     Args:
         response: response from the API
         prompt_format: how the prompt was formatted
-        tokens: list of tokens as strings in the sequence where the neuron 
+        tokens: list of tokens as strings in the sequence where the neuron
         is being simulated
     """
     choice = response.choices[0]
@@ -152,24 +155,24 @@ def parse_simulation_response(
         text = choice.text
     else:
         raise ValueError(f"Unhandled prompt format {prompt_format}")
-    
+
     # (atmallen) The original code seems overly complicated. I think we just need a map
     # from `text` index to response token position and then we can traverse the `text`
     # one '<tok>\tunknown\n' match at a time
-    
+
     # This only works because the sequence "\n<start>\n" tokenizes into multiple tokens
     # if it appears in a text sequence in the prompt.
     current_text_idx = text.rfind("\n<start>\n") + len("\n<start>")
     if current_text_idx == -1:
         raise Exception(f"No scoring start found in {text}")
-    
+
     expected_values = []
     distribution_values = []
     distribution_probabilities = []
     for subject_token in tokens:
         assert text[current_text_idx:].startswith(f"\n{subject_token}\tunknown")
         u_idx = current_text_idx + len(f"\n{subject_token}\t")
-        
+
         # Ideally, the activation token is not merged with either the \t or the \n
         # This seems very likely (because merging would have to be caused by the token
         # preceding \t) so I am willing to just assert it
@@ -192,7 +195,7 @@ def parse_simulation_response(
         expected_values.append(float(expected_value))
 
         current_text_idx += len(f"\n{subject_token}\tunknown")
-    
+
     return SequenceSimulation(
         tokens=list(tokens),
         expected_activations=expected_values,
@@ -260,7 +263,7 @@ class ExplanationNeuronSimulator(NeuronSimulator):
         logger.debug("result in score_explanation_by_activations is %s", result)
         return result
 
-    # TODO(sbills): The current token<tab>activation format can result in 
+    # TODO(sbills): The current token<tab>activation format can result in
     # improper tokenization. In particular, if the token is itself a tab,
     # we may get a single "\t\t" token rather than two "\t" tokens.
     # Consider using a separator that does not appear in any multi-character tokens.
@@ -270,7 +273,7 @@ class ExplanationNeuronSimulator(NeuronSimulator):
         """Create a few-shot prompt for predicting neuron activations for
         the given tokens."""
 
-        # TODO(sbills): The prompts in this file are subtly different from 
+        # TODO(sbills): The prompts in this file are subtly different from
         # the ones in explainer.py.
         # Consider reconciling them.
         prompt_builder = PromptBuilder()
@@ -547,10 +550,7 @@ class LogprobFreeExplanationTokenSimulator(NeuronSimulator):
         self.few_shot_example_set = few_shot_example_set
         self.prompt_format = prompt_format
 
-    async def simulate(
-        self,
-        tokens: Sequence[str]
-    ) -> SequenceSimulation:
+    async def simulate(self, tokens: Sequence[str]) -> SequenceSimulation:
         if self.json_mode:
             prompt = self._make_simulation_prompt_json(
                 tokens,
@@ -558,7 +558,10 @@ class LogprobFreeExplanationTokenSimulator(NeuronSimulator):
             )
 
             response = await self.client.generate(
-                prompt, max_tokens=2000, temperature=0.0, schema=ResponseModel.model_json_schema()
+                prompt,
+                max_tokens=2000,
+                temperature=0.0,
+                schema=ResponseModel.model_json_schema(),
             )
 
             # with open("/share/u/caden/sae-auto-interp/prompt.json", "w") as f:
@@ -569,9 +572,7 @@ class LogprobFreeExplanationTokenSimulator(NeuronSimulator):
             # assert len(response["choices"]) == 1
             # choice = response["choices"][0]
             # completion = choice["message"]["content"]
-            predicted_activations = _parse_no_logprobs_completion_json(
-                response, tokens
-            )
+            predicted_activations = _parse_no_logprobs_completion_json(response, tokens)
         else:
             prompt = self._make_simulation_prompt(
                 tokens,
@@ -716,8 +717,9 @@ For each sequence, you will see the tokens in the sequence where the activations
                 f"Sequence 1 Tokens with Activations:\n",
             )
             tokens_with_activations = _format_record_for_logprob_free_simulation(
-                example.activation_records[0], include_activations=True, 
-                max_activation=few_shot_example_max_activation
+                example.activation_records[0],
+                include_activations=True,
+                max_activation=few_shot_example_max_activation,
             )
             prompt_builder.add_message(
                 Role.ASSISTANT,
@@ -734,8 +736,9 @@ For each sequence, you will see the tokens in the sequence where the activations
                     f"Sequence {record_index + 2} Tokens with Activations:\n",
                 )
                 tokens_with_activations = _format_record_for_logprob_free_simulation(
-                    record, include_activations=True, 
-                    max_activation=few_shot_example_max_activation
+                    record,
+                    include_activations=True,
+                    max_activation=few_shot_example_max_activation,
                 )
                 prompt_builder.add_message(
                     Role.ASSISTANT,

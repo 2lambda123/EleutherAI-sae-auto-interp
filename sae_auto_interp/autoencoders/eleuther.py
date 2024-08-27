@@ -13,16 +13,20 @@ def load_eai_autoencoders(model, ae_layers: List[int], weight_dir: str, module: 
     submodules = {}
 
     for layer in ae_layers:
-        if module=="mlp":
+        if module == "mlp":
             submodule = f"layers.{layer}.{module}"
-        elif module=="res":
+        elif module == "res":
             submodule = f"layers.{layer}"
-        
+
         if "mnt" in weight_dir:
-            sae = Sae.load_from_disk(weight_dir+"/"+submodule,device=DEVICE).to(dtype=model.dtype)
+            sae = Sae.load_from_disk(weight_dir + "/" + submodule, device=DEVICE).to(
+                dtype=model.dtype
+            )
         else:
-            sae = Sae.load_from_hub(weight_dir,hookpoint=submodule, device=DEVICE).to(dtype=model.dtype)
-        
+            sae = Sae.load_from_hub(weight_dir, hookpoint=submodule, device=DEVICE).to(
+                dtype=model.dtype
+            )
+
         def _forward(sae, x):
             encoded = sae.pre_acts(x)
             trained_k = sae.cfg.k
