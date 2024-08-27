@@ -184,7 +184,7 @@ pipeline = Pipeline(
 )
 
 asyncio.run(pipeline.run())
-``` 
+```
 
 ## Simulation
 

@@ -30,7 +30,7 @@ class ExperimentConfig(Serializable):
 
 @dataclass
 class FeatureConfig(Serializable):
-    width: int 
+    width: int
     """Number of features in the autoencoder"""
 
     example_ctx_len: int

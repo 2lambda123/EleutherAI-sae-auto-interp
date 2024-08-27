@@ -6,9 +6,9 @@ import torch
 from simple_parsing import ArgumentParser
 
 from sae_auto_interp.clients import Local
-from sae_auto_interp.config import FeatureConfig, ExperimentConfig
+from sae_auto_interp.config import ExperimentConfig, FeatureConfig
 from sae_auto_interp.explainers import SimpleExplainer
-from sae_auto_interp.features import FeatureDataset, sample, pool_max_activation_windows
+from sae_auto_interp.features import FeatureDataset, pool_max_activation_windows, sample
 from sae_auto_interp.pipeline import Pipe, Pipeline, process_wrapper
 from sae_auto_interp.scorers import FuzzingScorer
 from sae_auto_interp.utils import (
@@ -24,7 +24,6 @@ fuzz_dir = "results/gpt2_fuzz"
 
 
 def main(args):
-
     ### Load tokens ###
     tokenizer = load_tokenizer("gpt2")
     tokens = load_tokenized_data(
@@ -50,7 +49,7 @@ def main(args):
         constructor=partial(
             pool_max_activation_windows, tokens=tokens, cfg=args.feature
         ),
-        sampler=partial(sample, cfg=args.experiment)
+        sampler=partial(sample, cfg=args.experiment),
     )
 
     ### Load client ###
@@ -73,7 +72,6 @@ def main(args):
         return record
 
     def explainer_postprocess(result):
-        
         with open(f"{explanation_dir}/{result.record.feature}.txt", "wb") as f:
             f.write(orjson.dumps(result.explanation))
 

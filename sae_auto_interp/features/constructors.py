@@ -1,9 +1,9 @@
 import torch
 from torchtyping import TensorType
 
+from ..config import FeatureConfig
 from .features import FeatureRecord, prepare_examples
 from .loader import BufferOutput
-from ..config import FeatureConfig
 
 
 def _to_dense(tokens, activations, locations):
@@ -39,10 +39,10 @@ def _reconstruct_examples(dense_activations, token_batches, ctx_len):
 
 
 def _top_k_pools(dense_activations, token_batches, ctx_len, max_examples):
+    token_windows, activation_windows, avg_pools = _reconstruct_examples(
+        dense_activations, token_batches, ctx_len
+    )
 
-    token_windows, activation_windows, avg_pools = \
-        _reconstruct_examples(dense_activations, token_batches, ctx_len)
-    
     # Filter out zero pools
     non_zero_mask = avg_pools != 0
     non_zero_pools = avg_pools[non_zero_mask]
@@ -102,6 +102,7 @@ def random_activation_windows(
         toks,
         torch.zeros_like(toks),
     )
+
 
 def default_constructor(
     record: FeatureRecord,

@@ -1,9 +1,7 @@
 import os
-from functools import partial, reduce
 from typing import Callable, Dict, List, NamedTuple
 
 import torch
-import torch.multiprocessing as mp
 from safetensors.torch import load_file
 from torchtyping import TensorType
 from tqdm import tqdm
@@ -164,7 +162,7 @@ class FeatureDataset:
 
     def __len__(self):
         return len(self.buffers)
-        
+
     def load(
         self,
         collate: bool = False,
@@ -193,7 +191,7 @@ class FeatureDataset:
             ]
 
         return self._load(collate, _worker)
-    
+
     def _load(self, collate: bool, _worker: Callable):
         if collate:
             all_records = []

@@ -24,7 +24,7 @@ class OpenAISimulator(Scorer):
         all_at_once=True,
     ):
         self.client = client
-        self.tokenizer = tokenizer  
+        self.tokenizer = tokenizer
         self.all_at_once = all_at_once
 
     async def __call__(self, record):

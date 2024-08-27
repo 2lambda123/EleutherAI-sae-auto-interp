@@ -1,14 +1,13 @@
 from functools import partial
-from .model import JumpReLUSAE
-from typing import List, Dict
+from typing import Dict, List
 
 from ..wrapper import AutoencoderLatents
+from .model import JumpReLUSAE
+
 DEVICE = "cuda:0"
 
 
-
-
-def load_gemma_autoencoders(model, ae_layers: List[int],average_l0s: Dict[int,int]):
+def load_gemma_autoencoders(model, ae_layers: List[int], average_l0s: Dict[int, int]):
     submodules = {}
 
     for layer in ae_layers:
@@ -16,14 +15,13 @@ def load_gemma_autoencoders(model, ae_layers: List[int],average_l0s: Dict[int,in
 
         sae = JumpReLUSAE.from_pretrained(path)
         sae.to(DEVICE)
+
         def _forward(sae, x):
             encoded = sae.encode(x)
             return encoded
 
         submodule = model.model.layers[layer]
-        submodule.ae = AutoencoderLatents(
-            sae, partial(_forward, sae), width=16384
-        )
+        submodule.ae = AutoencoderLatents(sae, partial(_forward, sae), width=16384)
 
         submodules[layer] = submodule
 

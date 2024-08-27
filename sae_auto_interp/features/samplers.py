@@ -7,10 +7,7 @@ from .features import Example, FeatureRecord
 
 
 def split_activation_quantiles(
-    examples: List[Example], 
-    n_quantiles: int,
-    n_samples: int,
-    seed: int = 22
+    examples: List[Example], n_quantiles: int, n_samples: int, seed: int = 22
 ):
     random.seed(seed)
 
@@ -30,15 +27,12 @@ def split_activation_quantiles(
 
     sample = random.sample(examples, n_samples)
     samples.append(sample)
-    
+
     return samples
 
 
 def split_quantiles(
-    examples: List[Example], 
-    n_quantiles: int, 
-    n_samples: int,
-    seed: int = 22
+    examples: List[Example], n_quantiles: int, n_samples: int, seed: int = 22
 ):
     random.seed(seed)
 
@@ -58,7 +52,7 @@ def split_quantiles(
 def train(
     examples: List[Example],
     n_train: int,
-    train_type: Literal["top", "random","quantile"],
+    train_type: Literal["top", "random", "quantile"],
     seed: int = 22,
     n_quantiles: int = 10,
     chosen_quantile: int = 0,
@@ -99,7 +93,7 @@ def sample(
         cfg.n_quantiles,
         cfg.chosen_quantile,
     )
-    
+
     _test = test(
         examples,
         cfg.n_examples_test,

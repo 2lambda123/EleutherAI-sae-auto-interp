@@ -5,8 +5,8 @@ import logging
 from typing import Any, Callable, Sequence
 
 import numpy as np
-from ..activations.activations import ActivationRecord
 
+from ..activations.activations import ActivationRecord
 from ..explanations.explanations import (
     ScoredSequenceSimulation,
     ScoredSimulation,
@@ -29,7 +29,9 @@ def correlation_score(
 def score_from_simulation(
     real_activations: ActivationRecord,
     simulation: SequenceSimulation,
-    score_function: Callable[[Sequence[float] | np.ndarray, Sequence[float] | np.ndarray], float],
+    score_function: Callable[
+        [Sequence[float] | np.ndarray, Sequence[float] | np.ndarray], float
+    ],
 ) -> float:
     return score_function(real_activations.activations, simulation.expected_activations)
 
@@ -40,7 +42,9 @@ def rsquared_score_from_sequences(
 ) -> float:
     return float(
         1
-        - np.mean(np.square(np.array(real_activations) - np.array(predicted_activations)))
+        - np.mean(
+            np.square(np.array(real_activations) - np.array(predicted_activations))
+        )
         / np.mean(np.square(np.array(real_activations)))
     )
 
@@ -62,18 +66,23 @@ async def _simulate_and_score_sequence(
     """Score an explanation of a neuron by how well it predicts activations on a sentence."""
     simulation = await simulator.simulate(activations.tokens)
     logging.debug(simulation)
-    rsquared_score = score_from_simulation(activations, simulation, rsquared_score_from_sequences)
+    rsquared_score = score_from_simulation(
+        activations, simulation, rsquared_score_from_sequences
+    )
     absolute_dev_explained_score = score_from_simulation(
         activations, simulation, absolute_dev_explained_score_from_sequences
     )
     scored_sequence_simulation = ScoredSequenceSimulation(
         simulation=simulation,
         true_activations=activations.activations.tolist(),
-        ev_correlation_score=score_from_simulation(activations, simulation, correlation_score),
+        ev_correlation_score=score_from_simulation(
+            activations, simulation, correlation_score
+        ),
         rsquared_score=rsquared_score,
         absolute_dev_explained_score=absolute_dev_explained_score,
     )
     return scored_sequence_simulation
+
 
 def fix_nan(val):
     if np.isnan(val):
@@ -81,20 +90,21 @@ def fix_nan(val):
     else:
         return float(val)
 
-def default(scored_simulation):
 
+def default(scored_simulation):
     ev_correlation_score = scored_simulation.ev_correlation_score
 
     ev_correlation_score = fix_nan(ev_correlation_score)
 
     return {
-        "tokens" : scored_simulation.simulation.tokens,
+        "tokens": scored_simulation.simulation.tokens,
         "true_activations": scored_simulation.true_activations,
         "predicted_activations": scored_simulation.simulation.expected_activations,
         "ev_correlation_score": ev_correlation_score,
         "rsquared_score": scored_simulation.rsquared_score,
         "absolute_dev_explained_score": scored_simulation.absolute_dev_explained_score,
     }
+
 
 def aggregate_scored_sequence_simulations(
     scored_sequence_simulations: list[ScoredSequenceSimulation],
@@ -108,13 +118,17 @@ def aggregate_scored_sequence_simulations(
     all_expected_values: list[float] = []
     for scored_sequence_simulation in scored_sequence_simulations:
         all_true_activations.extend(scored_sequence_simulation.true_activations or [])
-        all_expected_values.extend(scored_sequence_simulation.simulation.expected_activations)
+        all_expected_values.extend(
+            scored_sequence_simulation.simulation.expected_activations
+        )
     ev_correlation_score = (
         correlation_score(all_true_activations, all_expected_values)
         if len(all_true_activations) > 0
         else None
     )
-    rsquared_score = rsquared_score_from_sequences(all_true_activations, all_expected_values)
+    rsquared_score = rsquared_score_from_sequences(
+        all_true_activations, all_expected_values
+    )
     absolute_dev_explained_score = absolute_dev_explained_score_from_sequences(
         all_true_activations, all_expected_values
     )
@@ -153,7 +167,5 @@ async def simulate_and_score(
     #     f.write(str(scored_sequence_simulations))
     # return scored_sequence_simulations
 
-
     val = aggregate_scored_sequence_simulations(scored_sequence_simulations)
     return val
-

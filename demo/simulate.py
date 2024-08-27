@@ -6,28 +6,20 @@ import asyncio
 from functools import partial
 
 import orjson
-
 import torch
-
 from defaults import default_constructor
-from sae_auto_interp.explainers import explanation_loader
-from sae_auto_interp.scorers import OpenAISimulator
-from sae_auto_interp.clients import Outlines, Local
-from sae_auto_interp.utils import load_tokenized_data, load_tokenizer
-from sae_auto_interp.features import top_and_quantiles, FeatureLoader, FeatureDataset
-from sae_auto_interp.pipeline import Pipe, process_wrapper, Pipeline
-from functools import partial
+
+from sae_auto_interp.clients import Local, Outlines
 from sae_auto_interp.config import FeatureConfig
 from sae_auto_interp.explainers import explanation_loader
 from sae_auto_interp.features import FeatureDataset, FeatureLoader, top_and_quantiles
-from sae_auto_interp.pipeline import Actor, Pipe, Pipeline
+from sae_auto_interp.pipeline import Pipe, Pipeline, process_wrapper
 from sae_auto_interp.scorers import OpenAISimulator
 from sae_auto_interp.utils import (
     default_constructor,
     load_tokenized_data,
     load_tokenizer,
 )
-
 
 ### Set directories ###
 
@@ -38,18 +30,16 @@ SCORER_OUT_DIR = f"/mnt/ssd-1/gpaulo/SAE-Zoology/results/gpt2_simulation/{'all_a
 
 ### Load dataset ###
 
-tokenizer = load_tokenizer('gpt2')
+tokenizer = load_tokenizer("gpt2")
 tokens = load_tokenized_data(
     64,
     tokenizer,
     "kh4dien/fineweb-100m-sample",
     "train",
-)    
+)
 
 modules = [f".transformer.h.{i}" for i in [0, 2, 4, 6, 8, 10]]
-features = {
-    m : torch.arange(4, 20) for m in modules
-}
+features = {m: torch.arange(4, 20) for m in modules}
 
 dataset = FeatureDataset(
     raw_dir=RAW_FEATURES_PATH,
@@ -62,17 +52,18 @@ loader = FeatureLoader(
     tokens=tokens,
     dataset=dataset,
     constructor=partial(
-        default_constructor, 
-        n_random=5, 
-        ctx_len=20, 
-        max_examples=5_000
+        default_constructor, n_random=5, ctx_len=20, max_examples=5_000
     ),
-    sampler=top_and_quantiles
+    sampler=top_and_quantiles,
 )
 
 ### Load client ###
 
-client = Local("casperhansen/llama-3-70b-instruct-awq") if all_at_once else Outlines("casperhansen/llama-3-70b-instruct-awq")
+client = (
+    Local("casperhansen/llama-3-70b-instruct-awq")
+    if all_at_once
+    else Outlines("casperhansen/llama-3-70b-instruct-awq")
+)
 
 ### Build Explainer pipe ###
 
@@ -110,6 +101,4 @@ pipeline = Pipeline(
     scorer_pipe,
 )
 
-asyncio.run(
-    pipeline.run()
-)
+asyncio.run(pipeline.run())

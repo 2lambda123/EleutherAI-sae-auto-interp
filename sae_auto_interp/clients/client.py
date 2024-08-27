@@ -8,11 +8,7 @@ class Client(ABC):
         self.model = model
 
     @abstractmethod
-    async def generate(
-        self, 
-        prompt: str, 
-        **kwargs
-    ):
+    async def generate(self, prompt: str, **kwargs):
         raise NotImplementedError
 
 
